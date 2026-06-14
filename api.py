@@ -1,5 +1,4 @@
 import os
-import sys
 import __main__
 import joblib
 import numpy as np
@@ -9,8 +8,8 @@ from flask import Flask, request, jsonify, send_file
 import assets_data_prep
 from assets_data_prep import prepare_data
 
-# The model was pickled from a Jupyter notebook where all classes lived in
-# __main__.  We expose them there so joblib can deserialise the pipeline.
+# המודל נשמר מתוך הנוטבוק, כך שהמחלקות המותאמות רשומות תחת __main__
+# צריך לחשוף אותן שם כדי שה-pipeline ייטען בהצלחה
 for _name in (
     "RelativeRuntimeTransformer",
     "ActorExpTransformer",
@@ -28,6 +27,7 @@ for _name in (
 
 app = Flask(__name__)
 
+# טעינת המודל פעם אחת בהפעלת השרת
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "trained_model.pkl")
 model = joblib.load(MODEL_PATH)
 
@@ -41,16 +41,18 @@ def index():
 def predict():
     data = request.get_json(force=True)
 
+    # בדיקה שכל השדות החובה קיימים
     required = ["startYear", "runtimeMinutes", "genres"]
     missing = [f for f in required if f not in data or data[f] in (None, "", [])]
     if missing:
-        return jsonify({"error": f"Missing required fields: {', '.join(missing)}"}), 400
+        return jsonify({"error": f"שדות חסרים: {', '.join(missing)}"}), 400
 
+    # בדיקה שהשנה וזמן הריצה הם מספרים
     try:
         start_year = float(data["startYear"])
         runtime = float(data["runtimeMinutes"])
     except (ValueError, TypeError):
-        return jsonify({"error": "startYear and runtimeMinutes must be numeric values"}), 400
+        return jsonify({"error": "שנה וזמן ריצה חייבים להיות מספרים"}), 400
 
     genres = data.get("genres", [])
     if isinstance(genres, str):
@@ -64,6 +66,7 @@ def predict():
     if isinstance(directors, list):
         directors = ",".join(directors)
 
+    # בניית שורה אחת עם נתוני הסרט
     row = {
         "startYear": start_year,
         "runtimeMinutes": runtime,
@@ -77,10 +80,11 @@ def predict():
         df_prepared = prepare_data(df)
         prediction = model.predict(df_prepared)
         rating = round(float(prediction[0]), 2)
+        # הגבלת הדירוג לטווח תקין
         rating = max(1.0, min(10.0, rating))
         return jsonify({"predicted_rating": rating})
     except Exception as e:
-        return jsonify({"error": f"Prediction failed: {str(e)}"}), 500
+        return jsonify({"error": f"שגיאה בחיזוי: {str(e)}"}), 500
 
 
 if __name__ == "__main__":
