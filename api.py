@@ -4,7 +4,7 @@ import __main__
 import joblib
 import numpy as np
 import pandas as pd
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, send_file
 
 import assets_data_prep
 from assets_data_prep import prepare_data
@@ -34,7 +34,7 @@ model = joblib.load(MODEL_PATH)
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return send_file("index.html")
 
 
 @app.route("/predict", methods=["POST"])
