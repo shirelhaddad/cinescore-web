@@ -16,11 +16,10 @@
 ## מבנה הקבצים
 
 ```
+├── index.html            # ממשק המשתמש – טופס קלט והצגת תוצאה
 ├── api.py                # שרת Flask – נקודות קצה GET / ו-POST /predict
 ├── assets_data_prep.py   # פונקציית prepare_data() וכל הטרנספורמרים מחלק 2 (ללא שינוי)
-├── model.pkl             # ה-Pipeline המאומן מחלק 2
-├── templates/
-│   └── index.html        # ממשק המשתמש – טופס קלט והצגת תוצאה
+├── trained_model.pkl     # ה-Pipeline המאומן מחלק 2
 ├── requirements.txt      # תלויות Python עם גרסאות קבועות
 └── README.md             # קובץ זה
 ```
