@@ -28,7 +28,7 @@ for _name in (
 
 app = Flask(__name__)
 
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "model.pkl")
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "trained_model.pkl")
 model = joblib.load(MODEL_PATH)
 
 
