@@ -6,11 +6,10 @@ import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 
 
-# ---------------------------------------------------------------------------
-# Cleaning helpers
-# ---------------------------------------------------------------------------
+# --- פונקציות ניקוי ---
 
 def _clean_year(val):
+    # מחזיר שנה תקינה בת 4 ספרות, אחרת NaN
     if pd.isna(val):
         return np.nan
     try:
@@ -23,6 +22,7 @@ def _clean_year(val):
 
 
 def _clean_runtime(val):
+    # רק מספר, לא טקסט
     if pd.isna(val):
         return np.nan
     try:
@@ -32,6 +32,7 @@ def _clean_runtime(val):
 
 
 def _clean_rating(val):
+    # ערך תקין בין 1.0 ל-10.0
     if pd.isna(val):
         return np.nan
     try:
@@ -42,6 +43,7 @@ def _clean_rating(val):
 
 
 def _clean_genres(val):
+    # מחזיר רשימת ז'אנרים נקייה
     if pd.isna(val):
         return []
     s = str(val).strip()
@@ -63,6 +65,7 @@ def _clean_genres(val):
 
 
 def _clean_actors(val):
+    # מחזיר רק מזהים תקינים שמתחילים ב-nm
     if pd.isna(val):
         return []
     s = str(val).strip()
@@ -72,6 +75,7 @@ def _clean_actors(val):
 
 
 def _clean_director(val):
+    # מחזיר מזהה במאי תקין או NaN
     if pd.isna(val):
         return np.nan
     s = str(val).strip()
@@ -83,9 +87,7 @@ def _clean_director(val):
     return ','.join(matches)
 
 
-# ---------------------------------------------------------------------------
-# Generic list helper
-# ---------------------------------------------------------------------------
+# --- פונקציית עזר להמרה לרשימה ---
 
 def _safe_list(val):
     if isinstance(val, list):
@@ -99,9 +101,7 @@ def _safe_list(val):
         return [x.strip() for x in str(val).split(',') if x.strip()]
 
 
-# ---------------------------------------------------------------------------
-# Static features
-# ---------------------------------------------------------------------------
+# --- פיצ'רים סטטיים פשוטים ---
 
 def add_static_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
@@ -111,10 +111,9 @@ def add_static_features(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-# ---------------------------------------------------------------------------
-# Transformers
-# ---------------------------------------------------------------------------
+# --- טרנספורמרים ---
 
+# חישוב יחס אורך הסרט לחציון סרטים מאותו ז'אנר - רק לפי סרטים היסטוריים
 class RelativeRuntimeTransformer(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
         df = X[['genres', 'startYear', 'runtimeMinutes']].copy()
@@ -153,6 +152,7 @@ class RelativeRuntimeTransformer(BaseEstimator, TransformerMixin):
         return X.drop(columns=['_first_genre'])
 
 
+# ניסיון השחקן הכי מנוסה בסרט - לוקחים מקסימום ולא ממוצע כדי לא לדלל את הכוכב
 class ActorExpTransformer(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
         df = X[['lead_actors_ids', 'startYear']].dropna().copy()
@@ -181,6 +181,7 @@ class ActorExpTransformer(BaseEstimator, TransformerMixin):
         return X
 
 
+# ממוצע דירוגי הבמאי בסרטים קודמים - רק סרטים שיצאו לפני השנה הנוכחית
 class DirectorAvgTransformer(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
         orig_df = X[['genres', 'startYear']].copy()
@@ -246,6 +247,7 @@ class DirectorAvgTransformer(BaseEstimator, TransformerMixin):
             for d in current_directors:
                 if d in self.dir_history_:
                     hist = self.dir_history_[d]
+                    # סינון קפדני - רק סרטים משנים קודמות, למניעת data leakage
                     past_movies = hist[hist['startYear'] < year]
                     if not past_movies.empty:
                         dir_past_ratings.extend(past_movies['averageRating'].tolist())
@@ -257,6 +259,7 @@ class DirectorAvgTransformer(BaseEstimator, TransformerMixin):
                 res_dir_avg = np.mean(dir_past_ratings)
                 res_is_new_dir = 0.0
             else:
+                # במאי חדש - נשתמש בממוצע הגלובלי כברירת מחדל
                 res_dir_avg = global_past_avg
                 res_is_new_dir = 1.0
 
@@ -274,13 +277,12 @@ class DirectorAvgTransformer(BaseEstimator, TransformerMixin):
         return X.drop(columns=['_first_genre'])
 
 
-# ---------------------------------------------------------------------------
-# Main prepare_data function
-# ---------------------------------------------------------------------------
+# --- פונקציית prepare_data הראשית ---
 
 def prepare_data(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
+    # אם עמודת הבמאים לא קיימת - ננסה לטעון מקובץ הצוות
     if 'directors' not in df.columns:
         try:
             _crew = pd.read_csv(
@@ -291,6 +293,7 @@ def prepare_data(df: pd.DataFrame) -> pd.DataFrame:
         except Exception:
             df['directors'] = np.nan
 
+    # ניקוי כל העמודות
     df['startYear'] = df['startYear'].apply(_clean_year)
     df['runtimeMinutes'] = df['runtimeMinutes'].apply(_clean_runtime)
     df['genres'] = df['genres'].apply(_clean_genres)
@@ -299,10 +302,12 @@ def prepare_data(df: pd.DataFrame) -> pd.DataFrame:
 
     df = add_static_features(df)
 
+    # הסרת שורות ללא דירוג - רק בשלב האימון
     if 'averageRating' in df.columns:
         df['averageRating'] = df['averageRating'].apply(_clean_rating)
         df = df.dropna(subset=['averageRating']).reset_index(drop=True)
 
+    # הסרת עמודות שלא בשימוש במודל
     COLS_TO_DROP = ['numVotes', 'BoxOffice', 'plot', 'Language', 'Country', 'budget']
     df = df.drop(columns=[c for c in COLS_TO_DROP if c in df.columns])
 
