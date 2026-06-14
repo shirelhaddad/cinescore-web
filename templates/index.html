@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CineScore – Movie Rating Predictor</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f0f13;
+      color: #e2e2e8;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px 60px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    header h1 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: #fff;
+    }
+    header h1 span { color: #e5a100; }
+    header p {
+      margin-top: 8px;
+      color: #888;
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: #1a1a24;
+      border: 1px solid #2a2a38;
+      border-radius: 16px;
+      padding: 36px 40px;
+      width: 100%;
+      max-width: 640px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    }
+
+    .section-title {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: #e5a100;
+      margin-bottom: 16px;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #2a2a38;
+      margin: 28px 0;
+    }
+
+    .field {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: #a0a0b8;
+      margin-bottom: 6px;
+    }
+    input[type="number"],
+    input[type="text"] {
+      width: 100%;
+      padding: 11px 14px;
+      background: #0f0f13;
+      border: 1px solid #2e2e42;
+      border-radius: 8px;
+      color: #e2e2e8;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+    input:focus { border-color: #e5a100; }
+    input::placeholder { color: #444; }
+
+    .genre-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .genre-chip {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: #0f0f13;
+      border: 1px solid #2e2e42;
+      border-radius: 8px;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      color: #b0b0c8;
+      transition: border-color 0.2s, color 0.2s;
+      user-select: none;
+    }
+    .genre-chip input[type="checkbox"] { display: none; }
+    .genre-chip.selected {
+      border-color: #e5a100;
+      color: #e5a100;
+      background: #1e1a0a;
+    }
+    .genre-chip .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #2e2e42;
+      flex-shrink: 0;
+    }
+    .genre-chip.selected .dot { background: #e5a100; }
+
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    .hint {
+      font-size: 0.76rem;
+      color: #555;
+      margin-top: 5px;
+    }
+
+    button#predict-btn {
+      width: 100%;
+      padding: 14px;
+      margin-top: 8px;
+      background: #e5a100;
+      color: #0f0f13;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.4px;
+      transition: background 0.2s, transform 0.1s;
+    }
+    button#predict-btn:hover { background: #ffc120; }
+    button#predict-btn:active { transform: scale(0.98); }
+    button#predict-btn:disabled { background: #3a3a28; color: #666; cursor: not-allowed; }
+
+    #result-box {
+      margin-top: 24px;
+      padding: 22px;
+      background: #0f0f13;
+      border: 1px solid #2e2e42;
+      border-radius: 12px;
+      text-align: center;
+      display: none;
+    }
+    #result-box.visible { display: block; }
+    #result-box.success { border-color: #e5a100; }
+    #result-box.error-state { border-color: #c0392b; }
+
+    #result-label {
+      font-size: 0.8rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    #result-value {
+      font-size: 2.6rem;
+      font-weight: 700;
+      color: #e5a100;
+      margin-top: 4px;
+    }
+    #result-box.error-state #result-value {
+      font-size: 1rem;
+      color: #e74c3c;
+    }
+
+    .stars {
+      margin-top: 6px;
+      font-size: 1.3rem;
+      letter-spacing: 2px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Cine<span>Score</span></h1>
+  <p>Predict a movie's IMDb rating using machine learning</p>
+</header>
+
+<div class="card">
+
+  <p class="section-title">Movie Details</p>
+
+  <div class="row-2">
+    <div class="field">
+      <label for="startYear">Release Year</label>
+      <input type="number" id="startYear" placeholder="e.g. 2022" min="1900" max="2030" />
+    </div>
+    <div class="field">
+      <label for="runtimeMinutes">Runtime (minutes)</label>
+      <input type="number" id="runtimeMinutes" placeholder="e.g. 112" min="1" max="600" />
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Genres <span style="color:#555;">(select all that apply)</span></label>
+    <div class="genre-grid" id="genre-grid">
+      <!-- filled by JS -->
+    </div>
+  </div>
+
+  <hr class="divider" />
+  <p class="section-title">Cast &amp; Crew <span style="color:#555;font-size:0.7rem;text-transform:none;letter-spacing:0;">(optional – improves accuracy)</span></p>
+
+  <div class="field">
+    <label for="directors">Director IMDb ID(s)</label>
+    <input type="text" id="directors" placeholder="e.g. nm0000093" />
+    <p class="hint">Find on imdb.com in the URL: imdb.com/name/<strong>nm0000093</strong>/ · Separate multiple with commas</p>
+  </div>
+
+  <div class="field">
+    <label for="lead_actors_ids">Lead Actor IMDb ID(s)</label>
+    <input type="text" id="lead_actors_ids" placeholder="e.g. nm0000375, nm0000129" />
+    <p class="hint">Up to 5 lead actors recommended · Separate with commas</p>
+  </div>
+
+  <button id="predict-btn" onclick="predict()">Predict Rating</button>
+
+  <div id="result-box">
+    <div id="result-label">Predicted Rating</div>
+    <div id="result-value"></div>
+    <div class="stars" id="result-stars"></div>
+  </div>
+
+</div>
+
+<script>
+  const GENRES = [
+    'Action','Adventure','Animation','Biography','Comedy',
+    'Crime','Documentary','Drama','Fantasy','History',
+    'Horror','Music','Musical','Mystery','Romance',
+    'Sci-Fi','Sport','Thriller','War','Western'
+  ];
+
+  const grid = document.getElementById('genre-grid');
+  GENRES.forEach(g => {
+    const chip = document.createElement('label');
+    chip.className = 'genre-chip';
+    chip.innerHTML = `<input type="checkbox" value="${g}" /><span class="dot"></span>${g}`;
+    chip.addEventListener('change', () => chip.classList.toggle('selected', chip.querySelector('input').checked));
+    grid.appendChild(chip);
+  });
+
+  function getStars(rating) {
+    const filled = Math.round(rating / 2);
+    return '★'.repeat(filled) + '☆'.repeat(5 - filled);
+  }
+
+  async function predict() {
+    const btn = document.getElementById('predict-btn');
+    const resultBox = document.getElementById('result-box');
+    const resultValue = document.getElementById('result-value');
+    const resultLabel = document.getElementById('result-label');
+    const resultStars = document.getElementById('result-stars');
+
+    const startYear = document.getElementById('startYear').value.trim();
+    const runtimeMinutes = document.getElementById('runtimeMinutes').value.trim();
+    const genres = [...document.querySelectorAll('#genre-grid input:checked')].map(el => el.value);
+    const directors = document.getElementById('directors').value.trim();
+    const actorRaw = document.getElementById('lead_actors_ids').value.trim();
+    const lead_actors_ids = actorRaw ? actorRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+    if (!startYear || !runtimeMinutes) {
+      showError('Please enter Release Year and Runtime.');
+      return;
+    }
+    if (genres.length === 0) {
+      showError('Please select at least one genre.');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Predicting…';
+
+    try {
+      const res = await fetch('/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ startYear, runtimeMinutes, genres, directors, lead_actors_ids }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok || json.error) {
+        showError(json.error || 'An unexpected error occurred.');
+      } else {
+        const rating = json.predicted_rating;
+        resultBox.className = 'result-box visible success';
+        resultLabel.textContent = 'Predicted Rating';
+        resultValue.textContent = `${rating.toFixed(1)} / 10`;
+        resultStars.textContent = getStars(rating);
+      }
+    } catch {
+      showError('Could not reach the server. Make sure api.py is running.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Predict Rating';
+    }
+  }
+
+  function showError(msg) {
+    const resultBox = document.getElementById('result-box');
+    const resultValue = document.getElementById('result-value');
+    const resultLabel = document.getElementById('result-label');
+    const resultStars = document.getElementById('result-stars');
+    resultBox.className = 'result-box visible error-state';
+    resultLabel.textContent = 'Error';
+    resultValue.textContent = msg;
+    resultStars.textContent = '';
+  }
+</script>
+
+</body>
+</html>
