@@ -1,44 +1,42 @@
-# CineScore – Movie Rating Predictor
+# CineScore – חיזוי דירוג סרטים
 
-**Course:** Machine Learning | Ariel University  
-**Team:** Shirel Haddad & Einav Yinon  
-**Part:** 3 / 3 – Flask Web Application
-
----
-
-## Project Description
-
-A Flask web application that wraps the Random-Forest model trained in Part 2.  
-Enter a movie's release year, runtime, genres, and optionally IMDb IDs for the
-director and lead actors — the app returns an estimated IMDb average rating in
-real time, with no page reload.
+**קורס:** למידת מכונה | אוניברסיטת אריאל  
+**צוות:** שיראל חדד ועינב ינון  
+**חלק:** 3 מתוך 3 – אפליקציית Flask
 
 ---
 
-## File Structure
+## תיאור הפרויקט
+
+אפליקציית Flask שעוטפת את מודל ה-Random Forest שפותח בחלק 2.  
+מזינים פרמטרים של סרט (שנה, זמן ריצה, ז'אנרים ואופציונלית מזהי IMDb של הבמאי והשחקנים) ומקבלים תחזית לדירוג IMDb הממוצע – בזמן אמת, ללא רענון הדף.
+
+---
+
+## מבנה הקבצים
 
 ```
-├── api.py                # Flask server (GET / and POST /predict)
-├── assets_data_prep.py   # prepare_data() and all transformer classes (unchanged from Part 2)
-├── model.pkl             # Trained Random-Forest pipeline from Part 2
+├── api.py                # שרת Flask – נקודות קצה GET / ו-POST /predict
+├── assets_data_prep.py   # פונקציית prepare_data() וכל הטרנספורמרים מחלק 2 (ללא שינוי)
+├── model.pkl             # ה-Pipeline המאומן מחלק 2
 ├── templates/
-│   └── index.html        # Front-end: input form + live prediction display
-├── requirements.txt      # Python dependencies with pinned versions
-└── README.md             # This file
+│   └── index.html        # ממשק המשתמש – טופס קלט והצגת תוצאה
+├── requirements.txt      # תלויות Python עם גרסאות קבועות
+└── README.md             # קובץ זה
 ```
 
 ---
 
-## Setup
+## התקנה
 
-### 1. Create a virtual environment
+### 1. יצירת סביבה וירטואלית
 
 ```bash
 python -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
 ```
 
-### 2. Install dependencies
+### 2. התקנת ספריות
 
 ```bash
 pip install -r requirements.txt
@@ -46,41 +44,41 @@ pip install -r requirements.txt
 
 ---
 
-## Running the Server
+## הרצה
 
 ```bash
 python api.py
 ```
 
-Open your browser at **http://localhost:5000**
+פתחו את הדפדפן בכתובת **http://localhost:5000**
 
 ---
 
-## Using the App
+## שימוש באפליקציה
 
-Fill in the form fields and click **Predict Rating**:
+מלאו את שדות הטופס ולחצו על **Predict Rating**:
 
-| Field | Description | Expected values |
-|-------|-------------|-----------------|
-| Release Year | Year the movie was / will be released | 1900 – 2030 |
-| Runtime (minutes) | Total runtime of the movie | 1 – 600 |
-| Genres | One or more genres (checkboxes) | Action, Drama, … |
-| Director IMDb ID(s) | Optional – improves accuracy | e.g. `nm0000093` |
-| Lead Actor IMDb ID(s) | Optional – comma-separated | e.g. `nm0000375, nm0000129` |
+| שדה | תיאור | טווח ערכים |
+|-----|--------|------------|
+| Release Year | שנת יציאת הסרט | 1900 – 2030 |
+| Runtime (minutes) | אורך הסרט בדקות | 1 – 600 |
+| Genres | ז'אנרים (בחירה מרובה) | Action, Drama, … |
+| Director IMDb ID(s) | מזהה הבמאי ב-IMDb (אופציונלי) | למשל `nm0000093` |
+| Lead Actor IMDb ID(s) | מזהי שחקנים ראשיים, מופרדים בפסיק (אופציונלי) | למשל `nm0000375, nm0000129` |
 
-IMDb IDs can be found in any person's IMDb URL:  
-`https://www.imdb.com/name/nm0000093/` → ID is **nm0000093**
+מזהי IMDb נמצאים ב-URL של כל אדם באתר:  
+`https://www.imdb.com/name/nm0000093/` ← המזהה הוא **nm0000093**
 
 ---
 
-## API Endpoints
+## נקודות קצה (API)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/` | Returns the HTML page |
-| POST | `/predict` | Accepts JSON, returns `{"predicted_rating": <float>}` |
+| Method | Endpoint | תיאור |
+|--------|----------|--------|
+| GET | `/` | מחזיר את דף ה-HTML |
+| POST | `/predict` | מקבל JSON, מחזיר `{"predicted_rating": <מספר>}` |
 
-### Example request
+### דוגמה לקריאה
 
 ```bash
 curl -X POST http://localhost:5000/predict \
@@ -94,7 +92,7 @@ curl -X POST http://localhost:5000/predict \
   }'
 ```
 
-### Example response
+### דוגמה לתגובה
 
 ```json
 { "predicted_rating": 8.4 }
@@ -102,9 +100,9 @@ curl -X POST http://localhost:5000/predict \
 
 ---
 
-## Team Members
+## חברי הצוות
 
-| Name | ID |
-|------|----|
-| Shirel Haddad | 212546017 |
-| Einav Yinon | 211415351 |
+| שם | מספר ת.ז. |
+|----|-----------|
+| שיראל חדד | 212546017 |
+| עינב ינון | 211415351 |
